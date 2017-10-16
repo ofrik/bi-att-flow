@@ -50,8 +50,8 @@ def metric_max_over_ground_truths(metric_fn, prediction, ground_truths):
         scores_for_ground_truths.append(score)
     return max(scores_for_ground_truths)
 
-def get_score(prediction,ground_truth):
-    return metric_max_over_ground_truths(f1_score,prediction,ground_truth)
+def get_score(prediction,ground_truths):
+    return metric_max_over_ground_truths(f1_score,prediction,ground_truths)
 
 
 def evaluate(dataset, predictions):

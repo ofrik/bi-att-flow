@@ -4,6 +4,13 @@ from evaluate_script import get_score
 import json
 import pandas as pd
 
+from flask import Flask, request
+import tensorflow as tf
+
+app = Flask(__name__)
+import sys
+import numpy as np
+
 
 class QuestionAnswerer(object):
     demo = Demo()
@@ -31,22 +38,36 @@ class QuestionAnswerer(object):
                 return "[Error] Sorry, the number of words in question cannot be more than 100."
             model_answer = self.demo.run(pq_prepro)
             if answer is not None:
-                score = get_score(model_answer, [answer])
+                score = get_score(model_answer, answer)
             answers.append(model_answer)
             scores.append(score)
         return answers, scores
 
 
+@app.route('/target_reward', methods=['POST'])
+def reward():
+    dataDict = request.get_json()
+    paragraphs = dataDict["paragraphs"]
+    real_answers = dataDict["real_answers"]
+    generated_queries = dataDict["queries"]
+    answers, scores = qa.evaluate(paragraphs, generated_queries, real_answers)
+    op_scores = 1 - np.array(scores)
+    return str(op_scores.mean())
+
+
 if __name__ == "__main__":
-    qa = QuestionAnswerer()
-    # df = pd.read_csv("data/squad/processed_data.csv")
-    # short_df = df[:10]
-    # print(qa.evaluate(short_df["p"], short_df["q"], short_df["a"]))
-    paragraph = input("Enter the paragraph:")
-    while paragraph is not None and not paragraph == "":
-        question = input("Enter a question:")
-        while question is not None and not question == "":
-            answer = qa.getAnswer(paragraph, question)
-            print("The answer is: {}".format(answer))
-            question = input("Enter a question:")
-        paragraph = input("Enter the paragraph:")
+    with tf.Session() as sess:
+        qa = QuestionAnswerer()
+        app.run(host='0.0.0.0', port=sys.argv[1])
+        # qa = QuestionAnswerer()
+        # # df = pd.read_csv("data/squad/processed_data.csv")
+        # # short_df = df[:10]
+        # # print(qa.evaluate(short_df["p"], short_df["q"], short_df["a"]))
+        # paragraph = input("Enter the paragraph:")
+        # while paragraph is not None and not paragraph == "":
+        #     question = input("Enter a question:")
+        #     while question is not None and not question == "":
+        #         answer = qa.getAnswer(paragraph, question)
+        #         print("The answer is: {}".format(answer))
+        #         question = input("Enter a question:")
+        #     paragraph = input("Enter the paragraph:")
